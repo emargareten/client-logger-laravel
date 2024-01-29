@@ -86,5 +86,5 @@ return [
      | logged when response content is text. Set this to null to log the
      | entire response content.
      */
-    'content_words_limit' => 100,
+    'content_chars_limit' => 1000,
 ];

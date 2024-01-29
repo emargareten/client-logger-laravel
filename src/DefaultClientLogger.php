@@ -112,8 +112,8 @@ class DefaultClientLogger implements ClientLoggerInterface
         }
 
         if (Str::startsWith(strtolower($response->getHeaderLine('Content-Type')), 'text/')) {
-            if (isset($this->config['content_words_limit'])) {
-                return Str::words($content, $this->config['content_words_limit']);
+            if (isset($this->config['content_chars_limit'])) {
+                return Str::limit($content, $this->config['content_chars_limit']);
             }
 
             return $content;

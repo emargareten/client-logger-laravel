@@ -224,20 +224,20 @@ class DefaultClientLoggerTest extends TestCase
 
     public function test_log_context_response_body_for_text_content_gets_truncated()
     {
-        $this->logger->log($this->request, new Response(200, ['Content-Type' => 'text/plain'], Str::repeat('This is a text ', 100)));
+        $this->logger->log($this->request, new Response(200, ['Content-Type' => 'text/plain'], Str::repeat('This is a text', 100)));
 
-        Log::assertLogged(fn (LogEntry $log) => Str::wordCount($log->context['response']) === 100);
+        Log::assertLogged(fn (LogEntry $log) => strlen($log->context['response']) === 1003);
     }
 
     public function test_log_context_response_body_for_text_content_does_not_get_truncated_when_limit_is_null()
     {
-        config(['client-logger.content_words_limit' => null]);
+        config(['client-logger.content_chars_limit' => null]);
 
         $this->logger = new DefaultClientLogger();
 
-        $this->logger->log($this->request, new Response(200, ['Content-Type' => 'text/plain'], Str::repeat('This is a text ', 100)));
+        $this->logger->log($this->request, new Response(200, ['Content-Type' => 'text/plain'], Str::repeat('This is a text', 100)));
 
-        Log::assertLogged(fn (LogEntry $log) => Str::wordCount($log->context['response']) === 400);
+        Log::assertLogged(fn (LogEntry $log) => strlen($log->context['response']) === 1400);
     }
 
     public function test_log_context_contains_response_body_for_redirect()
