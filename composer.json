@@ -1,8 +1,8 @@
 {
-    "name": "emargareten/client-logger",
+    "name": "emargareten/client-logger-laravel",
     "description": "Log HTTP client requests and responses in Laravel",
-    "keywords": ["client-logger", "laravel", "log", "http"],
-    "homepage": "https://github.com/emargareten/client-logger",
+    "keywords": ["client-logger-laravel", "laravel", "log", "http"],
+    "homepage": "https://github.com/emargareten/client-logger-laravel",
     "license": "MIT",
     "require": {
         "php": "^8.1",
