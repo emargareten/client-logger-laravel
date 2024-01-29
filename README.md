@@ -1,4 +1,9 @@
-# Client Logger
+# Client Logger for Laravel
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/emargareten/client-logger-laravel.svg?style=flat-square)](https://packagist.org/packages/emargareten/client-logger-laravel)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/emargareten/client-logger-laravel/run-tests.yml?branch=master&label=tests&style=flat-square)](https://github.com/emargareten/client-logger-laravel/actions?query=workflow%3Arun-tests+branch%3Amaster)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/emargareten/client-logger-laravel/fix-php-code-style-issues.yml?branch=master&label=code%20style&style=flat-square)](https://github.com/emargareten/client-logger-laravel/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amaster)
+[![Total Downloads](https://img.shields.io/packagist/dt/emargareten/client-logger-laravel.svg?style=flat-square)](https://packagist.org/packages/emargareten/client-logger-laravel)
 
 The Client Logger is a Laravel package designed to log HTTP client requests and responses. It is user-friendly and offers a high degree of customization.
 
@@ -7,7 +12,7 @@ The Client Logger is a Laravel package designed to log HTTP client requests and 
 To install the package, use composer:
 
 ```bash
-composer require emargareten/client-logger
+composer require emargareten/client-logger-laravel
 ```
 
 ## Usage
