@@ -23,7 +23,7 @@ return [
     | default channel configured in config/logging.php will be used.
     |
     */
-    'channel' => env('HTTP_CLIENT_LOGGER_CHANNEL'),
+    'channel' => env('CLIENT_LOGGER_CHANNEL'),
 
     /*
      | --------------------------------------------------------------------------
@@ -53,12 +53,12 @@ return [
     'message' => 'HTTP Client Request',
 
     /*
-     * --------------------------------------------------------------------------
-     * Hidden Headers / Parameters
-     * --------------------------------------------------------------------------
-     * This configuration option sets the headers that will be masked in the
-     * request log with asterisks. This is useful for hiding sensitive
-     * information like passwords, tokens, etc.
+     | --------------------------------------------------------------------------
+     | Hidden Headers / Parameters
+     | --------------------------------------------------------------------------
+     | This configuration option sets the headers that will be masked in the
+     | request log with asterisks. This is useful for hiding sensitive
+     | information like passwords, tokens, etc.
      */
     'hidden_request_headers' => [
         'authorization',
