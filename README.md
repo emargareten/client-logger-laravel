@@ -23,7 +23,7 @@ After installing the package, you may publish the configuration file with the fo
 php artisan vendor:publish --provider="Emargareten\ClientLogger\ClientLoggerServiceProvider"
 ```
 
-The package adds a `log` method to the PendingRequest class. This method can be used to log the request and response of an HTTP request:
+The package adds a `log` method to the `PendingRequest` class. This method can be used to log the request and response of an HTTP request:
 
 ```php
 use Illuminate\Support\Facades\Http;
@@ -40,9 +40,23 @@ This will create a log entry with the following information (in the context):
 - `response_headers`: The headers of the response.
 - `response`: The body of the response.
 
-## Customization
+It is also possible to change the config for a given log by passing an array as the second argument:
 
-For more information on how to customize the package, please refer to the configuration file.
+```php
+Http::log('Example message...', [
+    'hidden_request_headers' => ['x-api-key'],
+])->get('https://example.com');
+```
+
+Here are some of the available config options:
+- `channel`: The channel to use for the log.
+- `level`: The level to use for the log (can be set separately for each status code or entirely disabled for a given status code).
+- `hidden_request_headers`: An array of headers that should be masked in the log.
+- `hidden_request_params`: An array of request parameters that should be masked in the log.
+- `hidden_response_headers`: An array of headers that should be masked in the log.
+- `hidden_response_params`: An array of response parameters that should be masked in the log.
+
+Please see the [config file](config/client-logger.php) for all available options.
 
 ## Testing
 
