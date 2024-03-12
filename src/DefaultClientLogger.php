@@ -2,7 +2,6 @@
 
 namespace Emargareten\ClientLogger;
 
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface;
@@ -138,8 +137,8 @@ class DefaultClientLogger implements ClientLoggerInterface
     protected function hideParameters(array $data, array $hidden): array
     {
         foreach ($hidden as $parameter) {
-            if (Arr::get($data, $parameter)) {
-                Arr::set($data, $parameter, '********');
+            if (data_get($data, $parameter)) {
+                data_set($data, $parameter, '********');
             }
         }
 
