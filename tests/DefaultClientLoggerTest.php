@@ -273,4 +273,15 @@ class DefaultClientLoggerTest extends TestCase
 
         Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'response') === ['key' => '********']);
     }
+
+    public function test_log_context_hides_nested_response_params()
+    {
+        config(['client-logger.hidden_response_params' => ['key']]);
+
+        $this->logger = new DefaultClientLogger();
+
+        $this->logger->log($this->request, new Response(200, [], '[{"key":"value"},{"key":"value2"}]'));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'response.0') === ['key' => '********'] && Arr::get($log->context, 'response.1') === ['key' => '********']);
+    }
 }
