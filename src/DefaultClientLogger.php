@@ -137,7 +137,7 @@ class DefaultClientLogger implements ClientLoggerInterface
     protected function hideParameters(array $data, array $hidden): array
     {
         foreach ($hidden as $parameter) {
-            if (data_get($data, $parameter)) {
+            if (! empty(array_filter(data_get($data, $parameter)))) {
                 data_set($data, $parameter, '********');
             }
         }
