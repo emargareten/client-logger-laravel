@@ -9,9 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 
 class LoggingMiddleware
 {
-    public function __construct(protected ClientLoggerInterface $logger)
-    {
-    }
+    public function __construct(protected ClientLoggerInterface $logger) {}
 
     public function __invoke(?string $message = null, $config = []): Closure
     {

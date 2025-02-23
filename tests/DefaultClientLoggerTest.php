@@ -18,11 +18,11 @@ class DefaultClientLoggerTest extends TestCase
 
     protected Request $request;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
         $this->request = new Request('GET', 'https://example.com/path?query=ABCDEF', ['header-key' => 'header-value'], 'TestRequestBody');
 
         LogFake::bind();
@@ -48,7 +48,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.level.4xx' => 'error']);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(400));
 
@@ -59,7 +59,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.level.400' => 'error']);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(400));
 
@@ -88,7 +88,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.level.400' => null]);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(400));
 
@@ -99,7 +99,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.level.4xx' => null]);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(400));
 
@@ -135,7 +135,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.hidden_request_headers' => ['header-key']]);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(200));
 
@@ -192,7 +192,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.hidden_response_headers' => ['header2']]);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(200, ['header2' => 'XYZ']));
 
@@ -233,7 +233,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.content_chars_limit' => null]);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(200, ['Content-Type' => 'text/plain'], Str::repeat('This is a text', 100)));
 
@@ -258,7 +258,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.hidden_response_params' => ['key']]);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(200, [], '{"key":"value"}'));
 
@@ -278,7 +278,7 @@ class DefaultClientLoggerTest extends TestCase
     {
         config(['client-logger.hidden_response_params' => ['key']]);
 
-        $this->logger = new DefaultClientLogger();
+        $this->logger = new DefaultClientLogger;
 
         $this->logger->log($this->request, new Response(200, [], '[{"key":"value"},{"key":"value2"}]'));
 
