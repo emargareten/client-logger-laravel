@@ -124,6 +124,13 @@ class DefaultClientLoggerTest extends TestCase
         Log::assertNothingLogged();
     }
 
+    public function test_log_level_for_unmapped_status_code_does_not_log()
+    {
+        $this->logger->log($this->request, new Response(100));
+
+        Log::assertNothingLogged();
+    }
+
     public function test_log_context_contains_request_header()
     {
         $this->logger->log($this->request, new Response(200));

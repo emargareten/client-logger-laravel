@@ -45,7 +45,7 @@ class ClientLoggerServiceProvider extends ServiceProvider
         ): PendingRequest {
             $logger ??= app(ClientLoggerInterface::class);
 
-            /** @var \Illuminate\Http\Client\PendingRequest $this */
+            /** @var PendingRequest $this */
             return $this->withMiddleware((new LoggingMiddleware($logger))->__invoke($message, $config));
         });
     }

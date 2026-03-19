@@ -1,5 +1,7 @@
 <?php
 
+use Emargareten\ClientLogger\DefaultClientLogger;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -11,7 +13,7 @@ return [
     | ClientLoggerInterface, by default it uses DefaultClientLogger.
     |
     */
-    'logger' => \Emargareten\ClientLogger\DefaultClientLogger::class,
+    'logger' => DefaultClientLogger::class,
 
     /*
     |--------------------------------------------------------------------------
@@ -80,9 +82,9 @@ return [
 
     /*
      |--------------------------------------------------------------------------
-     | Content Words Limit
+     | Content Characters Limit
      | --------------------------------------------------------------------------
-     | This configuration option sets the maximum number of words that will be
+     | This configuration option sets the maximum number of characters that will be
      | logged when response content is text. Set this to null to log the
      | entire response content.
      */

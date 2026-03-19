@@ -44,7 +44,7 @@ class DefaultClientLogger implements ClientLoggerInterface
 
         $logLevel = $this->logLevel();
 
-        if (! $logLevel) {
+        if ($logLevel === null) {
             return;
         }
 
@@ -72,7 +72,7 @@ class DefaultClientLogger implements ClientLoggerInterface
 
         $statusCodeRange = substr((string) $statusCode, 0, 1).'xx';
 
-        return $levels[$statusCodeRange];
+        return $levels[$statusCodeRange] ?? null;
     }
 
     protected function message(): string
@@ -105,9 +105,10 @@ class DefaultClientLogger implements ClientLoggerInterface
             $stream->rewind();
         }
 
-        if (is_array(json_decode($content, true)) &&
-            json_last_error() === JSON_ERROR_NONE) {
-            return $this->hideParameters(json_decode($content, true), $this->config['hidden_response_params']);
+        $decoded = json_decode($content, true);
+
+        if (is_array($decoded) && json_last_error() === JSON_ERROR_NONE) {
+            return $this->hideParameters($decoded, $this->config['hidden_response_params']);
         }
 
         if (Str::startsWith(strtolower($response->getHeaderLine('Content-Type')), 'text/')) {
@@ -136,14 +137,13 @@ class DefaultClientLogger implements ClientLoggerInterface
 
     protected function hideParameters(array $data, array $hidden): array
     {
-        foreach ($hidden as $parameter) {
-            foreach ($data as $key => $value) {
-                if (is_array($value)) {
-                    $data[$key] = $this->hideParameters($value, $hidden);
-                } elseif ($key === $parameter) {
-                    $data[$key] = '********';
-                }
+        $hiddenKeys = array_flip($hidden);
 
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = $this->hideParameters($value, $hidden);
+            } elseif (isset($hiddenKeys[$key])) {
+                $data[$key] = '********';
             }
         }
 
@@ -157,15 +157,21 @@ class DefaultClientLogger implements ClientLoggerInterface
         }
 
         $contentType = $this->request->getHeader('Content-Type')[0];
+        $body = (string) $this->request->getBody();
+
+        $stream = $this->request->getBody();
+        if ($stream->isSeekable()) {
+            $stream->rewind();
+        }
 
         if ($contentType === 'application/x-www-form-urlencoded') {
-            parse_str((string) $this->request->getBody(), $parameters);
+            parse_str($body, $parameters);
 
             return $parameters;
         }
 
         if (str_contains($contentType, 'json')) {
-            return json_decode((string) $this->request->getBody(), true) ?? [];
+            return json_decode($body, true) ?? [];
         }
 
         // todo handle multipart/form-data
