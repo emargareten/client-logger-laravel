@@ -70,6 +70,9 @@ return [
     'hidden_request_params' => [
         'password',
         'password_confirmation',
+        'token',
+        'api_token',
+        'api_key',
     ],
 
     'hidden_response_headers' => [
