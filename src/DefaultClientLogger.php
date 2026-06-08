@@ -2,6 +2,7 @@
 
 namespace Emargareten\ClientLogger;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface;
@@ -9,6 +10,15 @@ use Psr\Http\Message\ResponseInterface;
 
 class DefaultClientLogger implements ClientLoggerInterface
 {
+    protected const MASK = '********';
+
+    protected const APPEND_CONFIG_KEYS = [
+        'hidden_request_headers',
+        'hidden_request_params',
+        'hidden_response_headers',
+        'hidden_response_params',
+    ];
+
     protected RequestInterface $request;
 
     protected ResponseInterface $response;
@@ -19,8 +29,8 @@ class DefaultClientLogger implements ClientLoggerInterface
 
     public function __construct()
     {
-        $this->message = config('client-logger.message');
         $this->config = config('client-logger');
+        $this->message = $this->config['message'];
     }
 
     public function setMessage(string $message): static
@@ -32,7 +42,7 @@ class DefaultClientLogger implements ClientLoggerInterface
 
     public function setConfig(array $config = []): static
     {
-        $this->config = array_merge($this->config, $config);
+        $this->config = $this->mergeConfig($this->config, $config);
 
         return $this;
     }
@@ -96,14 +106,14 @@ class DefaultClientLogger implements ClientLoggerInterface
     protected function getResponseBody(): array|string
     {
         $response = $this->response;
-
-        $content = (string) $response->getBody();
-
         $stream = $response->getBody();
 
-        if ($stream->isSeekable()) {
-            $stream->rewind();
+        if (! $stream->isSeekable()) {
+            return 'Streamed Response';
         }
+
+        $content = (string) $stream;
+        $stream->rewind();
 
         $decoded = json_decode($content, true);
 
@@ -132,7 +142,14 @@ class DefaultClientLogger implements ClientLoggerInterface
 
     protected function getRequestUri(): string
     {
-        return (string) $this->request->getUri();
+        $uri = $this->request->getUri();
+        $query = $uri->getQuery();
+
+        if ($query === '') {
+            return (string) $uri;
+        }
+
+        return (string) $uri->withQuery($this->hideQueryParameters($query, $this->config['hidden_request_params']));
     }
 
     protected function hideParameters(array $data, array $hidden): array
@@ -140,14 +157,36 @@ class DefaultClientLogger implements ClientLoggerInterface
         $hiddenKeys = array_flip($hidden);
 
         foreach ($data as $key => $value) {
+            if (isset($hiddenKeys[$key])) {
+                $data[$key] = self::MASK;
+
+                continue;
+            }
+
             if (is_array($value)) {
                 $data[$key] = $this->hideParameters($value, $hidden);
-            } elseif (isset($hiddenKeys[$key])) {
-                $data[$key] = '********';
             }
         }
 
         return $data;
+    }
+
+    protected function hideQueryParameters(string $query, array $hidden): string
+    {
+        $hiddenKeys = array_flip($hidden);
+
+        return implode('&', array_map(function (string $part) use ($hiddenKeys): string {
+            $hasValue = str_contains($part, '=');
+            [$key] = array_pad(explode('=', $part, 2), 2, null);
+            $decodedKey = rawurldecode(str_replace('+', ' ', $key));
+            $baseKey = Str::before($decodedKey, '[');
+
+            if (isset($hiddenKeys[$decodedKey]) || isset($hiddenKeys[$baseKey])) {
+                return $hasValue ? $key.'='.self::MASK : $key;
+            }
+
+            return $part;
+        }, explode('&', $query)));
     }
 
     protected function requestData(): array
@@ -156,15 +195,17 @@ class DefaultClientLogger implements ClientLoggerInterface
             return [];
         }
 
-        $contentType = $this->request->getHeader('Content-Type')[0];
-        $body = (string) $this->request->getBody();
-
+        $contentType = strtolower($this->request->getHeaderLine('Content-Type'));
         $stream = $this->request->getBody();
-        if ($stream->isSeekable()) {
-            $stream->rewind();
+
+        if (! $stream->isSeekable()) {
+            return [];
         }
 
-        if ($contentType === 'application/x-www-form-urlencoded') {
+        $body = (string) $stream;
+        $stream->rewind();
+
+        if (Str::startsWith($contentType, 'application/x-www-form-urlencoded')) {
             parse_str($body, $parameters);
 
             return $parameters;
@@ -181,6 +222,8 @@ class DefaultClientLogger implements ClientLoggerInterface
 
     protected function headers(array $headers, array $hidden = []): array
     {
+        $hidden = array_map(fn (string $headerName) => strtolower($headerName), $hidden);
+
         $headerNames = collect($headers)->keys()->map(function ($headerName) {
             return strtolower($headerName);
         })->toArray();
@@ -192,5 +235,23 @@ class DefaultClientLogger implements ClientLoggerInterface
         $headers = array_combine($headerNames, $headerValues);
 
         return $this->hideParameters($headers, $hidden);
+    }
+
+    protected function mergeConfig(array $base, array $overrides): array
+    {
+        $merged = array_merge($base, Arr::except($overrides, self::APPEND_CONFIG_KEYS));
+
+        foreach (self::APPEND_CONFIG_KEYS as $key) {
+            if (! array_key_exists($key, $overrides)) {
+                continue;
+            }
+
+            $baseValues = is_array($base[$key] ?? null) ? $base[$key] : [];
+            $overrideValues = is_array($overrides[$key]) ? $overrides[$key] : [];
+
+            $merged[$key] = array_values(array_unique(array_merge($baseValues, $overrideValues)));
+        }
+
+        return $merged;
     }
 }

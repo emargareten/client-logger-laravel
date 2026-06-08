@@ -52,7 +52,7 @@ Here are some of the available config options:
 - `channel`: The channel to use for the log.
 - `level`: The level to use for the log (can be set separately for each status code or entirely disabled for a given status code).
 - `hidden_request_headers`: An array of headers that should be masked in the log.
-- `hidden_request_params`: An array of request parameters that should be masked in the log.
+- `hidden_request_params`: An array of request body and query parameters that should be masked in the log.
 - `hidden_response_headers`: An array of headers that should be masked in the log.
 - `hidden_response_params`: An array of response parameters that should be masked in the log.
 

@@ -12,6 +12,8 @@ class ClientLoggerServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__.'/../config/client-logger.php', 'client-logger');
+
         $this->app->bind(ClientLoggerInterface::class, function ($app) {
             return $app->make(config('client-logger.logger'));
         });
@@ -22,8 +24,6 @@ class ClientLoggerServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/client-logger.php', 'client-logger');
-
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/client-logger.php' => config_path('client-logger.php'),

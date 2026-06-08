@@ -4,6 +4,7 @@ namespace Emargareten\ClientLogger\Tests;
 
 use Emargareten\ClientLogger\ClientLoggerInterface;
 use Emargareten\ClientLogger\DefaultClientLogger;
+use GuzzleHttp\Psr7\BufferStream;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Arr;
@@ -84,6 +85,15 @@ class DefaultClientLoggerTest extends TestCase
         Log::assertLogged(fn (LogEntry $log) => $log->level === 'error');
     }
 
+    public function test_log_level_config_replaces_default_levels_at_runtime()
+    {
+        $this->logger
+            ->setConfig(['level' => ['5xx' => 'error']])
+            ->log($this->request, new Response(200));
+
+        Log::assertNothingLogged();
+    }
+
     public function test_log_level_can_be_disabled()
     {
         config(['client-logger.level.400' => null]);
@@ -158,6 +168,56 @@ class DefaultClientLoggerTest extends TestCase
         Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'headers.header-key') === '********');
     }
 
+    public function test_runtime_hidden_request_headers_are_appended_to_defaults()
+    {
+        $this->request = new Request('GET', 'https://example.com', [
+            'Authorization' => 'Bearer token',
+            'X-Api-Key' => 'secret',
+        ]);
+
+        $this->logger
+            ->setConfig(['hidden_request_headers' => ['X-Api-Key']])
+            ->log($this->request, new Response(200));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'headers.authorization') === '********'
+            && Arr::get($log->context, 'headers.x-api-key') === '********');
+    }
+
+    public function test_log_context_hides_hidden_query_params()
+    {
+        $this->request = new Request('GET', 'https://example.com/path?token=secret&visible=yes');
+
+        $this->logger
+            ->setConfig(['hidden_request_params' => ['token']])
+            ->log($this->request, new Response(200));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'uri') === 'https://example.com/path?token=********&visible=yes');
+    }
+
+    public function test_log_context_preserves_valueless_hidden_query_params()
+    {
+        $this->request = new Request('GET', 'https://example.com/path?token&visible=yes');
+
+        $this->logger
+            ->setConfig(['hidden_request_params' => ['token']])
+            ->log($this->request, new Response(200));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'uri') === 'https://example.com/path?token&visible=yes');
+    }
+
+    public function test_runtime_config_calls_are_cumulative()
+    {
+        $this->request = new Request('GET', 'https://example.com', ['X-Api-Key' => 'secret']);
+
+        $this->logger
+            ->setConfig(['hidden_request_headers' => ['X-Api-Key']])
+            ->setConfig(['hidden_response_params' => ['secret']])
+            ->log($this->request, new Response(200, [], '{"secret":"value"}'));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'headers.x-api-key') === '********'
+            && Arr::get($log->context, 'response.secret') === '********');
+    }
+
     public function test_log_contains_request_payload_for_json_content()
     {
         $this->request = new Request('POST', 'https://example.com/path?query=ABCDEF', ['header-key' => 'header-value', 'Content-Type' => 'application/json'], '{"key":"value"}');
@@ -170,6 +230,15 @@ class DefaultClientLoggerTest extends TestCase
     public function test_log_contains_request_payload_for_form_content()
     {
         $this->request = new Request('POST', 'https://example.com/path?query=ABCDEF', ['header-key' => 'header-value', 'Content-Type' => 'application/x-www-form-urlencoded'], 'key=value');
+
+        $this->logger->log($this->request, new Response(200));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'payload') === ['key' => 'value']);
+    }
+
+    public function test_log_contains_request_payload_for_form_content_with_charset()
+    {
+        $this->request = new Request('POST', 'https://example.com/path?query=ABCDEF', ['header-key' => 'header-value', 'Content-Type' => 'application/x-www-form-urlencoded; charset=UTF-8'], 'key=value');
 
         $this->logger->log($this->request, new Response(200));
 
@@ -247,6 +316,17 @@ class DefaultClientLoggerTest extends TestCase
         Log::assertLogged(fn (LogEntry $log) => strlen($log->context['response']) === 1400);
     }
 
+    public function test_log_context_does_not_consume_non_seekable_response_body()
+    {
+        $stream = new BufferStream;
+        $stream->write('streamed content');
+
+        $this->logger->log($this->request, new Response(200, ['Content-Type' => 'text/plain'], $stream));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'response') === 'Streamed Response');
+        $this->assertSame('streamed content', $stream->getContents());
+    }
+
     public function test_log_context_contains_response_body_for_redirect()
     {
         $this->logger->log($this->request, new Response(301, ['Location' => 'https://example.com/redirect']));
@@ -290,5 +370,16 @@ class DefaultClientLoggerTest extends TestCase
         $this->logger->log($this->request, new Response(200, [], '[{"key":"value"},{"key":"value2"}]'));
 
         Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'response.0') === ['key' => '********'] && Arr::get($log->context, 'response.1') === ['key' => '********']);
+    }
+
+    public function test_log_context_hides_response_params_that_contain_arrays()
+    {
+        config(['client-logger.hidden_response_params' => ['secret']]);
+
+        $this->logger = new DefaultClientLogger;
+
+        $this->logger->log($this->request, new Response(200, [], '{"secret":{"token":"value"}}'));
+
+        Log::assertLogged(fn (LogEntry $log) => Arr::get($log->context, 'response.secret') === '********');
     }
 }
